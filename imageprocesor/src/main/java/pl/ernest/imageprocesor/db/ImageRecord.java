@@ -2,7 +2,7 @@ package pl.ernest.imageprocesor.db;
 
 import org.springframework.data.annotation.Id;
 
-public class Image {
+public class ImageRecord {
 
     @Id
     private Long id;
@@ -11,7 +11,7 @@ public class Image {
 
     private final String miniaturePath;
 
-    public Image(String fullPath, String miniaturePath){
+    public ImageRecord(String fullPath, String miniaturePath){
         this.fullPath = fullPath;
         this.miniaturePath = miniaturePath;
     }
@@ -35,7 +35,7 @@ public class Image {
     @Override
     public String toString() {
         return String.format(
-                "Image[id=%d, path='%s', miniaturePath='%s']",
+                "ImageRecord[id=%d, path='%s', miniaturePath='%s']",
                 id, fullPath, miniaturePath);
     }
 }
