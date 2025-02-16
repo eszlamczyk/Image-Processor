@@ -8,5 +8,6 @@ Basic server + fronend app for uploading, displaying images. The goal of this pr
 Technologies used (for now)
 
  - Spring Reactive web (Spring WebFlux)
+ - Imgscalr
  - PostgreSQL
  - React + Tailwind
