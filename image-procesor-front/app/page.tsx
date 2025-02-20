@@ -11,10 +11,23 @@ export default function Home() {
         }
     };
 
-    const handleSendFiles = () => {
+    const handleSendFiles = async () => {
         if (selectedFiles) {
-            // Add logic for sending files here
-            console.log('Sending files:', selectedFiles);
+            const formData = new FormData();
+            for (let i = 0; i < selectedFiles.length; i++) {
+                formData.append("files", selectedFiles[i])
+            }
+            try {
+                const response = await fetch("http://localhost:8080/api/upload", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                const data = await response.text();
+                console.log("Upload successful", data);
+            } catch (error) {
+                console.error("Upload failed", error);
+            }
         }
     };
 
