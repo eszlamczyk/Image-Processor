@@ -37,3 +37,5 @@ out/
 .vscode/
 
 
+# images for backend directory
+imageprocesor/images/*
