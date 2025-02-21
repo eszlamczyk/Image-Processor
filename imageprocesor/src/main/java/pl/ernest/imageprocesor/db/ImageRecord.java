@@ -1,35 +1,30 @@
 package pl.ernest.imageprocesor.db;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
+@Getter
+@Setter
+@Table("images")
 public class ImageRecord {
 
     @Id
     private Long id;
 
-    private final String fullPath;
+    @Column("fullpath")
+    private String fullPath;
 
-    private final String miniaturePath;
+    @Column("miniaturepath")
+    private String miniaturePath;
+
+    public ImageRecord() { }
 
     public ImageRecord(String fullPath, String miniaturePath){
         this.fullPath = fullPath;
         this.miniaturePath = miniaturePath;
-    }
-
-    public Long getId(){
-        return this.id;
-    }
-
-    public void setId(Long id){
-        this.id = id;
-    }
-
-    public String getFullPath(){
-        return this.fullPath;
-    }
-
-    public String getMiniaturePath(){
-        return this.miniaturePath;
     }
 
     @Override
