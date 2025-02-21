@@ -13,6 +13,7 @@ public class ImageProcesorApplication {
         ConfigurableApplicationContext context = SpringApplication.run(ImageProcesorApplication.class, args);
         GreetingClient greetingClient = context.getBean(GreetingClient.class);
         // We need to block for the content here or the JVM might exit before the message is logged
+
         System.out.println(">> message = " + greetingClient.getMessage().block());
     }
 

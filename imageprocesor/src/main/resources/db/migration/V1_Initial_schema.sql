@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS images (id SERIAL PRIMARY KEY, fullPath VARCHAR(255) not NULL, miniaturePath VARCHAR(255) not NULL);
