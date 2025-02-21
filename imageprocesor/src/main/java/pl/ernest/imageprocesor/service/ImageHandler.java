@@ -1,6 +1,7 @@
 package pl.ernest.imageprocesor.service;
 
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -16,11 +17,14 @@ public class ImageHandler {
 
     private final String full_image_path;
 
-    private final String miniature_image_path;
+    private final MiniatureHandler miniatureHandler;
 
-    public ImageHandler(PathConfig pathConfig) {
+    private final ImageRecordHandler imageRecordHandler;
+
+    public ImageHandler(PathConfig pathConfig, MiniatureHandler miniatureHandler, ImageRecordHandler imageRecordHandler) {
         full_image_path = pathConfig.getFullImagePath();
-        miniature_image_path = pathConfig.getMiniatureImagePath();
+        this.miniatureHandler = miniatureHandler;
+        this.imageRecordHandler = imageRecordHandler;
     }
 
 
@@ -29,19 +33,22 @@ public class ImageHandler {
                 .map(multipart -> multipart.get("files"))
                 .defaultIfEmpty(Collections.emptyList())
                 .flatMapMany(Flux::fromIterable)
-                .cast(org.springframework.http.codec.multipart.FilePart.class)
-                .flatMap(this::saveFile)
+                .cast(FilePart.class)
+                .flatMap(this::saveFullFile)
+                .flatMap(miniatureHandler::createMiniature)
+                .flatMap(imageRecordHandler::saveFilePathsToDB)
                 .collectList()
                 .flatMap(filenames -> ServerResponse.ok()
                         .contentType(MediaType.TEXT_PLAIN)
-                        .bodyValue("Uploaded: " + String.join(", ", filenames)));
+                        .bodyValue("Uploaded & Resized: " + String.join(", ", filenames)));
     }
 
-    private Mono<String> saveFile(org.springframework.http.codec.multipart.FilePart filePart) {
+
+    private Mono<FilePart> saveFullFile(FilePart filePart) {
         Path destination = Path.of(full_image_path, filePart.filename());
 
         return filePart.transferTo(destination)
-                .thenReturn(filePart.filename());
+                .thenReturn(filePart);
     }
 
 }
