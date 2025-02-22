@@ -1,9 +1,13 @@
 'use client'
 
 import { useState } from "react";
+import ImageComponent from "./imageComponent";
+import { File } from "buffer";
 
 export default function Home() {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    // todo: place here list of already displayed files and leater fill them 
+    // with ready miniatures when processed
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -34,6 +38,24 @@ export default function Home() {
     const handleRemoveFile = (indexToRemove: number) => {
         setSelectedFiles((selectedFiles.filter((_, index) => index !== indexToRemove)));
     }
+
+    const getMiniaturesFromServer = () => {
+        let images = []
+        let files: File[] = [] //todo: get from server logic
+
+        if(!files){
+            return <span>"Nothing to display"</span>;
+        }
+
+        for (let i = 0; i < files.length; i++){
+            images.push(
+                ImageComponent(files[i])
+            );
+        }
+
+        return images;
+    }
+
 
     return (
         <div className="flex flex-col items-center justify-start h-screen bg-blue-950">
@@ -91,6 +113,11 @@ export default function Home() {
                     </button>
                 </div>
             </div>
+            {/* Files got from server */}
+            <div className="flex flex-col p-2 space-y-3 bg-blue-800" id="miniatures">
+                    {getMiniaturesFromServer()}
+            </div>
+
         </div >
     );
 }
