@@ -1,7 +1,7 @@
 package pl.ernest.imageprocesor.service;
 
 
-import org.springframework.core.io.Resource;
+import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import pl.ernest.imageprocesor.config.PathConfig;
@@ -40,7 +40,7 @@ public class ImageService {
                 .thenReturn(filePart);
     }
 
-    public Flux<Resource> getAllMiniatures(){
+    public Flux<DataBuffer> getAllMiniatures(){
         return imageRecordHandler.getAllMiniaturesFromDB()
                 .flatMap(miniatureHandler::getMiniatureFromPath);
     }

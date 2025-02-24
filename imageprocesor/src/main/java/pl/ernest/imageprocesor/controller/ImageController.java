@@ -2,11 +2,13 @@ package pl.ernest.imageprocesor.controller;
 
 
 import lombok.AllArgsConstructor;
-import org.springframework.core.io.Resource;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
 import pl.ernest.imageprocesor.service.ImageService;
 import reactor.core.publisher.Flux;
+
 
 
 @RestController
@@ -26,8 +28,8 @@ public class ImageController {
         return imageService.getAllMiniatureNames();
     }
 
-    @GetMapping
-    public Flux<Resource> getImages(){
+    @GetMapping(produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<DataBuffer> getImages(){
         return imageService.getAllMiniatures();
     }
 }

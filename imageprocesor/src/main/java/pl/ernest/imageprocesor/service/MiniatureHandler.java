@@ -2,10 +2,15 @@ package pl.ernest.imageprocesor.service;
 
 import org.springframework.core.io.PathResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.buffer.DataBuffer;
+import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;
 import pl.ernest.imageprocesor.config.MiniatureConfig;
 import pl.ernest.imageprocesor.config.PathConfig;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuple2;
@@ -15,6 +20,7 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -91,18 +97,19 @@ public class MiniatureHandler {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    public Mono<Resource> getMiniatureFromPath(String filePath){
-        if (!getFileExtension(filePath).equals("jpeg")) {
-            return Mono.empty();
+    public Flux<DataBuffer> getMiniatureFromPath(String filePath){
+        try {
+            Path file = Path.of(filePath);
+            Resource resource = new UrlResource(file.toUri());
+
+            if (resource.exists() || resource.isReadable()) {
+                return DataBufferUtils.read(resource, new DefaultDataBufferFactory(), 4096);
+            } else {
+                throw new RuntimeException("Could not read the file!");
+            }
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Error: " + e.getMessage());
         }
-
-        Resource fileResource = new PathResource(filePath);
-
-        if (!fileResource.isFile()){
-            return Mono.empty();
-        }
-
-         return Mono.just(fileResource);
     }
 
     private String getFileExtension(String fileName) {
