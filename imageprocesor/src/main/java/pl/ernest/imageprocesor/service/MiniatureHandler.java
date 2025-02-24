@@ -1,5 +1,7 @@
 package pl.ernest.imageprocesor.service;
 
+import org.springframework.core.io.PathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;
 import pl.ernest.imageprocesor.config.MiniatureConfig;
@@ -12,10 +14,7 @@ import reactor.util.function.Tuples;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -48,9 +47,10 @@ public class MiniatureHandler {
                 .map(ByteArrayOutputStream::toByteArray)
                 .flatMap(bytes -> {
                     try {
+                        //todo: block unsupported formats
                         String format = getFormatName(filePart.filename()).orElse("jpg");
-                        byte[] resizedImage = resize(new ByteArrayInputStream(bytes), miniatureSize, format);
-                        return saveFile(resizedImage, filePart.filename() + "_miniature." + format)
+                        byte[] resizedImage = resize(new ByteArrayInputStream(bytes), miniatureSize);
+                        return saveFile(resizedImage, filePart.filename() + "_miniature.jpeg")
                                 .map(savedFilename -> Tuples.of(filePart.filename(), savedFilename));
                     } catch (IOException e){
                         return Mono.error(e);
@@ -58,17 +58,17 @@ public class MiniatureHandler {
                 });
     }
 
-    private byte[] resize(InputStream inputStream, int size, String format) throws IOException {
+    private byte[] resize(InputStream inputStream, int size) throws IOException {
         BufferedImage originalImage = ImageIO.read(inputStream);
-        BufferedImage resizedImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        BufferedImage resizedImage = new BufferedImage(size, size, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = resizedImage.createGraphics();
 
         g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g2d.drawImage(originalImage.getScaledInstance(size, size, Image.SCALE_SMOOTH), 0, 0, null);
+        g2d.drawImage(originalImage.getScaledInstance(size, size, Image.SCALE_SMOOTH), 0, 0, size, size, null);
         g2d.dispose();
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        ImageIO.write(resizedImage, format, outputStream);
+        ImageIO.write(resizedImage, "jpeg", outputStream); // Always write as JPEG
         return outputStream.toByteArray();
     }
 
@@ -89,6 +89,28 @@ public class MiniatureHandler {
                     return fileName;
                 })
                 .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    public Mono<Resource> getMiniatureFromPath(String filePath){
+        if (!getFileExtension(filePath).equals("jpeg")) {
+            return Mono.empty();
+        }
+
+        Resource fileResource = new PathResource(filePath);
+
+        if (!fileResource.isFile()){
+            return Mono.empty();
+        }
+
+         return Mono.just(fileResource);
+    }
+
+    private String getFileExtension(String fileName) {
+        int lastIndexOf = fileName.lastIndexOf(".");
+        if (lastIndexOf == -1) {
+            return ""; // empty extension
+        }
+        return fileName.substring(lastIndexOf);
     }
 
 }
