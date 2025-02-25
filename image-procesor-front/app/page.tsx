@@ -1,13 +1,51 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
 import ImageComponent from "./imageComponent";
 import { File } from "buffer";
+import { url } from "inspector";
+
+type FileType = { url: string };
+
 
 export default function Home() {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     // todo: place here list of already displayed files and leater fill them 
     // with ready miniatures when processed
+
+    const [images, setImages] = useState<string[]>([]);  
+    
+        useEffect(() => {
+            const fetchStream = async () => {
+                const response = await fetch("http://localhost:8080/api/images");
+                if (!response.ok) throw new Error("Failed to fetch images");
+    
+                const reader = response.body?.getReader();
+                if (!reader) return;
+    
+                let chunks: Uint8Array[] = [];
+                let count: number = 0;
+    
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    chunks.push(value);
+                    if (chunks) {
+                        const blob = new Blob(chunks, { type: "image/jpeg" });
+                        const imageUrl = URL.createObjectURL(blob);
+            
+                        setImages((prevImages) => [...prevImages, imageUrl]);
+                        chunks = []
+                        count += 1;
+                    }
+                }
+                console.log(`Loaded ${count} images`);
+            };
+    
+            fetchStream().catch(console.error);
+        }, []);
+
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -22,11 +60,11 @@ export default function Home() {
                 formData.append("files", selectedFiles[i])
             }
             try {
-                const response = await fetch("http://localhost:8080/api/upload", {
+                const response = await fetch("http://localhost:8080/api/images/upload", {
                     method: "POST",
                     body: formData,
                 });
-
+                
                 const data = await response.text();
                 console.log("Upload successful", data);
             } catch (error) {
@@ -38,24 +76,6 @@ export default function Home() {
     const handleRemoveFile = (indexToRemove: number) => {
         setSelectedFiles((selectedFiles.filter((_, index) => index !== indexToRemove)));
     }
-
-    const getMiniaturesFromServer = () => {
-        let images = []
-        let files: File[] = [] //todo: get from server logic
-
-        if(!files){
-            return <span>"Nothing to display"</span>;
-        }
-
-        for (let i = 0; i < files.length; i++){
-            images.push(
-                ImageComponent(files[i])
-            );
-        }
-
-        return images;
-    }
-
 
     return (
         <div className="flex flex-col items-center justify-start h-screen bg-blue-950">
@@ -115,7 +135,9 @@ export default function Home() {
             </div>
             {/* Files got from server */}
             <div className="flex flex-col p-2 space-y-3 bg-blue-800" id="miniatures">
-                    {getMiniaturesFromServer()}
+                {images.map((img, index) => (
+                        <img key={index} src={img} alt="streamed" style={{ width: 100, height: 100, margin: 5 }} />
+                    ))}
             </div>
 
         </div >
