@@ -1,6 +1,8 @@
 package pl.ernest.imageprocesor.service;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
@@ -14,6 +16,9 @@ import java.nio.file.Path;
 @Service
 
 public class ImageService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ImageService.class);
+
     private final String full_image_path;
 
     private final MiniatureHandler miniatureHandler;
@@ -42,8 +47,12 @@ public class ImageService {
 
     public Flux<DataBuffer> getAllMiniatures(){
         return imageRecordHandler.getAllMiniaturesFromDB()
-                .flatMap(miniatureHandler::getMiniatureFromPath);
+                .doOnSubscribe(sub -> logger.info("Fetching images from database..."))
+                .doOnNext(image -> logger.info("Fetched image Path: {}", image))  // Log each image
+                .flatMap(miniatureHandler::getMiniatureFromPath)
+                .doOnComplete(() -> logger.info("Finished retrieving images."));
     }
+
 
     public Flux<String> getAllMiniatureNames(){
         return imageRecordHandler.getAllMiniaturesFromDB();

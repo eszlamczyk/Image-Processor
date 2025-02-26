@@ -16,35 +16,55 @@ export default function Home() {
 
     const [images, setImages] = useState<string[]>([]);  
     
-        useEffect(() => {
-            const fetchStream = async () => {
-                const response = await fetch("http://localhost:8080/api/images");
-                if (!response.ok) throw new Error("Failed to fetch images");
+    useEffect(() => {
+        const fetchStream = async () => {
+            const response = await fetch("http://localhost:8080/api/images");
+            if (!response.ok) throw new Error("Failed to fetch images");
     
-                const reader = response.body?.getReader();
-                if (!reader) return;
+            const reader = response.body?.getReader();
+            if (!reader) return;
     
-                let chunks: Uint8Array[] = [];
-                let count: number = 0;
+            let chunks: Uint8Array[] = [];
+            const debugString: Uint8Array[] = [];
+            let decoder = new TextDecoder("utf-8");
+            let count = 0;
     
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
+            while (true) {
+                const { done, value } = await reader.read();
+                
+                if (done) break;
+    
+                if (value) {
+                    debugString.push(value);
                     chunks.push(value);
-                    if (chunks) {
+    
+                    // Convert received data to string to check for boundary
+                    const textChunk = decoder.decode(value, { stream: true });
+                    if (textChunk.includes("--boundary--")) {
+                        console.log("Image boundary detected!");
+    
+                        // Combine all collected chunks into a single Blob
                         const blob = new Blob(chunks, { type: "image/jpeg" });
                         const imageUrl = URL.createObjectURL(blob);
-            
+                        
                         setImages((prevImages) => [...prevImages, imageUrl]);
-                        chunks = []
+    
+                        // Reset chunks for the next image
+                        chunks = [];
                         count += 1;
                     }
                 }
-                console.log(`Loaded ${count} images`);
-            };
+            }
+            const numberArrays: number[][] = debugString.map(arr => [...arr]);
+            console.log(numberArrays.map(numberArray => String.fromCharCode.apply(null, numberArray)));
+            console.log(`Loaded ${count} images`);
+        };
     
-            fetchStream().catch(console.error);
-        }, []);
+        fetchStream().catch(console.error);
+    }, []);
+    
+    
+    
 
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

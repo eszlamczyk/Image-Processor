@@ -21,8 +21,8 @@ public class StartupClearConfig {
 
     @PostConstruct
     public void clearOnStartup() {
-        clearDirectories();
-        imageRecordHandler.clearDB();
+        //clearDirectories();
+        //imageRecordHandler.clearDB();
     }
 
     private void clearDirectories() {
